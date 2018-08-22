@@ -35,6 +35,8 @@
 #include "VisualizationUtils.h"
 #include "RotationHelpers.h"
 #include "ImageManipulationHelpers.h"
+#include <stdlib.h>
+#include <iostream>  
 
 #include <sstream>
 #include <iomanip>
@@ -183,11 +185,11 @@ void Visualizer::SetObservationLandmarks(const cv::Mat_<float>& landmarks_2D, do
 				cv::Point featurePoint(cvRound(landmarks_2D.at<float>(i) * (float)draw_multiplier), cvRound(landmarks_2D.at<float>(i + n) * (float)draw_multiplier));
 
 				// A rough heuristic for drawn point size
-				int thickness = (int)std::ceil(3.0* ((double)captured_image.cols) / 640.0);
+				int thickness = (int)std::ceil(1.0* ((double)captured_image.cols) / 640.0);
 				int thickness_2 = (int)std::ceil(1.0* ((double)captured_image.cols) / 640.0);
 
-				cv::circle(captured_image, featurePoint, 1 * draw_multiplier, cv::Scalar(0, 0, 255), thickness, cv::LINE_AA, draw_shiftbits);
-				cv::circle(captured_image, featurePoint, 1 * draw_multiplier, cv::Scalar(255, 0, 0), thickness_2, cv::LINE_AA, draw_shiftbits);
+				cv::circle(captured_image, featurePoint, 1 * draw_multiplier, cv::Scalar(200, 200, 200), thickness, cv::LINE_AA, draw_shiftbits);
+				cv::circle(captured_image, featurePoint, 1 * draw_multiplier, cv::Scalar(200, 200, 0), thickness_2, cv::LINE_AA, draw_shiftbits);
 
 			}
 			else
@@ -196,7 +198,7 @@ void Visualizer::SetObservationLandmarks(const cv::Mat_<float>& landmarks_2D, do
 				cv::Point featurePoint(cvRound(landmarks_2D.at<float>(i) * (double)draw_multiplier), cvRound(landmarks_2D.at<float>(i + n) * (double)draw_multiplier));
 
 				// A rough heuristic for drawn point size
-				int thickness = (int)std::ceil(2.5* ((double)captured_image.cols) / 640.0);
+				int thickness = (int)std::ceil(1.0* ((double)captured_image.cols) / 640.0);
 				int thickness_2 = (int)std::ceil(1.0* ((double)captured_image.cols) / 640.0);
 
 				cv::circle(captured_image, featurePoint, 1 * draw_multiplier, cv::Scalar(0, 0, 155), thickness, cv::LINE_AA, draw_shiftbits);
@@ -331,7 +333,7 @@ void Visualizer::SetObservationActionUnits(const std::vector<std::pair<std::stri
 
 
 // Eye gaze infomration drawing, first of eye landmarks then of gaze
-void Visualizer::SetObservationGaze(const cv::Point3f& gaze_direction0, const cv::Point3f& gaze_direction1, const std::vector<cv::Point2f>& eye_landmarks2d, const std::vector<cv::Point3f>& eye_landmarks3d, double confidence)
+cv::Point Visualizer::SetObservationGaze(const cv::Point3f& gaze_direction0, const cv::Point3f& gaze_direction1, const std::vector<cv::Point2f>& eye_landmarks2d, const std::vector<cv::Point3f>& eye_landmarks3d, double confidence, int gain)
 {
 	if(confidence > visualisation_boundary)
 	{
@@ -362,11 +364,12 @@ void Visualizer::SetObservationGaze(const cv::Point3f& gaze_direction0, const cv
 					next_point = 20 + 28;
 
 				cv::Point nextFeaturePoint(cvRound(eye_landmarks2d[next_point].x * (double)draw_multiplier), cvRound(eye_landmarks2d[next_point].y * (double)draw_multiplier));
+				
 				if ((i < 28 && (i < 8 || i > 19)) || (i >= 28 && (i < 8 + 28 || i > 19 + 28)))
-					cv::line(captured_image, featurePoint, nextFeaturePoint, cv::Scalar(255, 0, 0), thickness_2, cv::LINE_AA, draw_shiftbits);
+					cv::line(captured_image, featurePoint, nextFeaturePoint, cv::Scalar(200, 0, 200), thickness_2, cv::LINE_AA, draw_shiftbits);
 				else
-					cv::line(captured_image, featurePoint, nextFeaturePoint, cv::Scalar(0, 0, 255), thickness_2, cv::LINE_AA, draw_shiftbits);
-
+					cv::line(captured_image, featurePoint, nextFeaturePoint, cv::Scalar(0, 200, 200), thickness_2, cv::LINE_AA, draw_shiftbits);
+					
 			}
 
 			// Now draw the gaze lines themselves
@@ -394,16 +397,34 @@ void Visualizer::SetObservationGaze(const cv::Point3f& gaze_direction0, const cv
 			cv::Mat_<float> proj_points;
 			cv::Mat_<float> mesh_0 = (cv::Mat_<float>(2, 3) << points_left[0].x, points_left[0].y, points_left[0].z, points_left[1].x, points_left[1].y, points_left[1].z);
 			Project(proj_points, mesh_0, fx, fy, cx, cy);
-			cv::line(captured_image, cv::Point(cvRound(proj_points.at<float>(0, 0) * (float)draw_multiplier), cvRound(proj_points.at<float>(0, 1) * (float)draw_multiplier)),
-				cv::Point(cvRound(proj_points.at<float>(1, 0) * (float)draw_multiplier), cvRound(proj_points.at<float>(1, 1) * (float)draw_multiplier)), cv::Scalar(110, 220, 0), 2, cv::LINE_AA, draw_shiftbits);
+			
+			cv::Point2f ProjLeft_begin = cv::Point(cvRound(proj_points.at<float>(0, 0) * (float)draw_multiplier), cvRound(proj_points.at<float>(0, 1) * (float)draw_multiplier));
+			cv::Point2f ProjLeft_end = cv::Point(cvRound(proj_points.at<float>(1, 0) * (float)draw_multiplier), cvRound(proj_points.at<float>(1, 1) * (float)draw_multiplier));
+			
+				
+			
+			cv::line(captured_image, ProjLeft_begin, ProjLeft_end, cv::Scalar(150, 150, 150), 1, 8, 4);
 
 			cv::Mat_<float> mesh_1 = (cv::Mat_<float>(2, 3) << points_right[0].x, points_right[0].y, points_right[0].z, points_right[1].x, points_right[1].y, points_right[1].z);
 			Project(proj_points, mesh_1, fx, fy, cx, cy);
-			cv::line(captured_image, cv::Point(cvRound(proj_points.at<float>(0, 0) * (float)draw_multiplier), cvRound(proj_points.at<float>(0, 1) * (float)draw_multiplier)),
-				cv::Point(cvRound(proj_points.at<float>(1, 0) * (float)draw_multiplier), cvRound(proj_points.at<float>(1, 1) * (float)draw_multiplier)), cv::Scalar(110, 220, 0), 2, cv::LINE_AA, draw_shiftbits);
+			
+			cv::Point2f ProjRight_begin = cv::Point(cvRound(proj_points.at<float>(0, 0) * (float)draw_multiplier), cvRound(proj_points.at<float>(0, 1) * (float)draw_multiplier));
+			cv::Point2f ProjRight_end = cv::Point(cvRound(proj_points.at<float>(1, 0) * (float)draw_multiplier), cvRound(proj_points.at<float>(1, 1) * (float)draw_multiplier));
+			cv::line(captured_image, ProjRight_begin, ProjRight_end, cv::Scalar(150, 150, 150), 1, 8, 4);
+			//std::cout << "ProjLeft_begin " << ProjLeft_begin/16 << "ProjLeft_end" << ProjLeft_end / 16 << std::endl;
+			//std::cout << "ProjRight_begin " << ProjRight_begin / 16 << "ProjRight_end" << ProjRight_end / 16 << std::endl;
+			
+			int dist_hoffset = ((ProjLeft_end.x - ProjLeft_begin.x) + (ProjRight_end.x - ProjRight_begin.x))/32;
+			int dist_voffset = ((ProjLeft_end.y - ProjLeft_begin.y) + (ProjRight_end.y - ProjRight_begin.y))/32;
+		
 
+			//cv::circle(captured_image,cv::Point((ProjRight_begin.x+ ProjLeft_begin.x)/32+ dist_hoffset*gain, (ProjRight_begin.y + ProjLeft_begin.y)/32+ dist_voffset*gain), 16, CV_RGB(255, 0,0),-1, 5);		
+			
+			return cv::Point((ProjRight_begin.x + ProjLeft_begin.x) / 32 + dist_hoffset*gain, (ProjRight_begin.y + ProjLeft_begin.y) / 32 + dist_voffset*gain);
+		
 		}
 	}
+	return cv::Point(-1,-1);
 }
 
 void Visualizer::SetFps(double fps)
@@ -413,42 +434,31 @@ void Visualizer::SetFps(double fps)
 	std::sprintf(fpsC, "%d", (int)fps);
 	std::string fpsSt("FPS:");
 	fpsSt += fpsC;
+	
 	cv::putText(captured_image, fpsSt, cv::Point(10, 20), cv::FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255, 0, 0), 1, cv::LINE_AA);
+	
 }
 
 char Visualizer::ShowObservation()
 {
-	bool ovservation_shown = false;
-
 	if (vis_align && !aligned_face_image.empty())
 	{
 		cv::imshow("sim_warp", aligned_face_image);
-		ovservation_shown = true;
 	}
 	if (vis_hog && !hog_image.empty())
 	{
 		cv::imshow("hog", hog_image);
-		ovservation_shown = true;
 	}
 	if (vis_aus && !action_units_image.empty())
 	{
 		cv::imshow("action units", action_units_image);
-		ovservation_shown = true;
 	}
 	if (vis_track)
-	{
+	{	
+		
 		cv::imshow("tracking result", captured_image);
-		ovservation_shown = true;
 	}
-	
-	// Only perform waitKey if something was shown
-	char result = '\0';
-	if (ovservation_shown)
-	{
-		result = cv::waitKey(1);
-	}
-	return result;
-
+	return cv::waitKey(1);
 }
 
 cv::Mat Visualizer::GetVisImage()

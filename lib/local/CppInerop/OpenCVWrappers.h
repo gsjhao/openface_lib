@@ -66,6 +66,9 @@ namespace OpenCVWrappers {
 
 		cv::Mat* mat;
 
+		static int refCount;
+
+
 	public:
 
 		static int PixelFormatToType(PixelFormat fmt)
@@ -98,9 +101,39 @@ namespace OpenCVWrappers {
 			}
 		}
 
+		static property int RefCount {
+			int get() { return refCount; }
+		}
+
+		RawImage()
+		{
+			mat = new cv::Mat();
+			refCount++;
+		}
+
 		RawImage(const cv::Mat& m)
 		{
 			mat = new cv::Mat(m.clone());
+			refCount++;
+		}
+
+		RawImage(RawImage^ img)
+		{
+			mat = new cv::Mat(img->Mat.clone());
+			refCount++;
+		}
+
+		RawImage(int width, int height, int type)
+		{
+			mat = new cv::Mat(height, width, type);
+			refCount++;
+		}
+
+		RawImage(int width, int height, PixelFormat format)
+		{
+			int type = RawImage::PixelFormatToType(format);
+			mat = new cv::Mat(height, width, type);
+			refCount++;
 		}
 
 		void Mirror()
@@ -117,6 +150,7 @@ namespace OpenCVWrappers {
 			{
 				delete mat;
 				mat = NULL;
+				refCount--;
 			}
 		}
 

@@ -33,7 +33,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-
+#include <ctime>
 #include "LandmarkDetectorFunc.h"
 #include "RotationHelpers.h"
 #include "ImageManipulationHelpers.h"
@@ -302,6 +302,9 @@ bool LandmarkDetector::DetectLandmarksInVideo(const cv::Mat &rgb_image, CLNF& cl
 		}
 
 		bool face_detection_success;
+		float confidence;
+		face_detection_success = LandmarkDetector::DetectSingleFaceHOG(bounding_box, grayscale_image, clnf_model.face_detector_HOG, confidence, preference_det);
+		/*
 		if(params.curr_face_detector == FaceModelParameters::HOG_SVM_DETECTOR)
 		{
 			float confidence;
@@ -316,7 +319,7 @@ bool LandmarkDetector::DetectLandmarksInVideo(const cv::Mat &rgb_image, CLNF& cl
 			float confidence;
 			face_detection_success = LandmarkDetector::DetectSingleFaceMTCNN(bounding_box, rgb_image, clnf_model.face_detector_MTCNN, confidence, preference_det);
 		}
-
+		*/
 		// Attempt to detect landmarks using the detected face (if unseccessful the detection will be ignored)
 		if(face_detection_success)
 		{
@@ -397,14 +400,19 @@ bool LandmarkDetector::DetectLandmarksInVideo(const cv::Mat &rgb_image, const cv
 {
 	if(bounding_box.width > 0)
 	{
+		// The actual facial landmark detection / tracking
+		//clock_t begin = clock();
 		// calculate the local and global parameters from the generated 2D shape (mapping from the 2D to 3D because camera params are unknown)
 		clnf_model.params_local.setTo(0);
 		clnf_model.pdm.CalcParams(clnf_model.params_global, bounding_box, clnf_model.params_local);		
 
 		// indicate that face was detected so initialisation is not necessary
 		clnf_model.tracking_initialised = true;
+		//clock_t end = clock();
+		
 	}
 
+	cout << "cost time:"<< endl;
 	return DetectLandmarksInVideo(rgb_image, clnf_model, params, grayscale_image);
 
 }
